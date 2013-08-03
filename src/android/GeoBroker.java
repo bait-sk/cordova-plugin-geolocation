@@ -85,6 +85,9 @@ public class GeoBroker extends CordovaPlugin {
                 String id = args.getString(0);
                 this.clearWatch(id);
             }
+            else if (action.equals("forceStop")) {
+                this.forceStop();
+            }
             else {
                 return false;
             }
@@ -95,6 +98,11 @@ public class GeoBroker extends CordovaPlugin {
             callbackContext.sendPluginResult(result);
         }
         return true;
+    }
+
+    private void forceStop(){
+        this.gpsListener.forceStop();
+        this.networkListener.forceStop();
     }
 
     private void clearWatch(String id) {

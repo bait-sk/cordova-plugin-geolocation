@@ -205,6 +205,14 @@ var geolocation = {
             timers[id].timer = false;
             exec(null, null, "Geolocation", "clearWatch", [id]);
         }
+    },
+
+    forceStop: function() {
+        for (i in timers) {
+            clearTimeout(timers[i].timer);
+            timers[i].timer = false;
+        }
+        exec(null, null, "Geolocation", "forceStop", []);
     }
 };
 

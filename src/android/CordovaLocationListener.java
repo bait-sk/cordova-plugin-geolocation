@@ -180,6 +180,15 @@ public class CordovaLocationListener implements LocationListener {
         }
     }
 
+    public void forceStop() {
+        this.watches.clear();
+        this.callbacks.clear();
+        this.cancelTimer();
+        this.locationManager.removeUpdates(this);
+        this.running = false;
+    }
+
+
     /**
      * Destroy listener.
      */
