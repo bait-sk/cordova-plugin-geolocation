@@ -57,15 +57,15 @@ public class CordovaLocationListener implements LocationListener {
     }
 
     protected void fail(int code, String message) {
-    	this.cancelTimer();
+        this.cancelTimer();
         for (CallbackContext callbackContext: this.callbacks)
         {
             this.owner.fail(code, message, callbackContext, false);
         }
         if(this.owner.isGlobalListener(this) && this.watches.size() == 0)
         {
-        	Log.d(TAG, "Stopping global listener");
-        	this.stop();
+            Log.d(TAG, "Stopping global listener");
+            this.stop();
         }
         this.callbacks.clear();
 
@@ -76,15 +76,15 @@ public class CordovaLocationListener implements LocationListener {
     }
 
     private void win(Location loc) {
-    	this.cancelTimer();
+        this.cancelTimer();
         for (CallbackContext callbackContext: this.callbacks)
         {
             this.owner.win(loc, callbackContext, false);
         }
         if(this.owner.isGlobalListener(this) && this.watches.size() == 0)
         {
-        	Log.d(TAG, "Stopping global listener");
-        	this.stop();
+            Log.d(TAG, "Stopping global listener");
+            this.stop();
         }
         this.callbacks.clear();
 
@@ -94,7 +94,7 @@ public class CordovaLocationListener implements LocationListener {
         }
     }
 
-    private void myWin(Location loc) {
+    private void myWin(Location location) {
         this.owner.isBestLocation(location, this.myCallback);
     }
 
@@ -160,16 +160,18 @@ public class CordovaLocationListener implements LocationListener {
         return this.watches.size() + this.callbacks.size();
     }
     
-    public startBestWatching(CallbackContext callbackContext) {
+    public void startBestWatching(CallbackContext callbackContext) {
+        Log.d(TAG, "startBestWatching(callback)");
         if (this.myCallback == null) {
             this.myCallback = callbackContext;
         }
         this.start();
     }
-    public startBestWatching() {
+    public void startBestWatching() {
+        Log.d(TAG, "startBestWatching()");
         this.start();
     }
-    public stopBestWatchin(){
+    public void stopBestWatching(){
         this.running = false;
         this.locationManager.removeUpdates(this);
     }
@@ -180,10 +182,10 @@ public class CordovaLocationListener implements LocationListener {
         }
     }
     public void addCallback(CallbackContext callbackContext, int timeout) {
-    	if(this.timer == null) {
-    		this.timer = new Timer();
-    	}
-    	this.timer.schedule(new LocationTimeoutTask(callbackContext, this), timeout);
+        if(this.timer == null) {
+            this.timer = new Timer();
+        }
+        this.timer.schedule(new LocationTimeoutTask(callbackContext, this), timeout);
         this.callbacks.add(callbackContext);        
         if (this.size() == 1) {
             this.start();
@@ -210,7 +212,7 @@ public class CordovaLocationListener implements LocationListener {
     /**
      * Destroy listener.
      */
-    public void destroy() {    	
+    public void destroy() {     
         this.stop();
     }
 
@@ -225,7 +227,7 @@ public class CordovaLocationListener implements LocationListener {
         if (!this.running) {
             if (this.locationManager.getProvider(LocationManager.NETWORK_PROVIDER) != null) {
                 this.running = true;
-                this.locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 10, this);
+                this.locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
             } else {
                 this.fail(CordovaLocationListener.POSITION_UNAVAILABLE, "Network provider is not available.");
             }
@@ -242,7 +244,7 @@ public class CordovaLocationListener implements LocationListener {
      * Stop receiving location updates.
      */
     private void stop() {
-    	this.cancelTimer();
+        this.cancelTimer();
         if (this.running) {
             this.locationManager.removeUpdates(this);
             this.running = false;
@@ -250,35 +252,35 @@ public class CordovaLocationListener implements LocationListener {
     }
     
     private void cancelTimer() {
-    	if(this.timer != null) {
-    		this.timer.cancel();
-        	this.timer.purge();
-        	this.timer = null;
-    	}
+        if(this.timer != null) {
+            this.timer.cancel();
+            this.timer.purge();
+            this.timer = null;
+        }
     }
     
     private class LocationTimeoutTask extends TimerTask {
-    	
-    	private CallbackContext callbackContext = null;
-    	private CordovaLocationListener listener = null;
-    	
-    	public LocationTimeoutTask(CallbackContext callbackContext, CordovaLocationListener listener) {
-    		this.callbackContext = callbackContext;
-    		this.listener = listener;
-    	}
+        
+        private CallbackContext callbackContext = null;
+        private CordovaLocationListener listener = null;
+        
+        public LocationTimeoutTask(CallbackContext callbackContext, CordovaLocationListener listener) {
+            this.callbackContext = callbackContext;
+            this.listener = listener;
+        }
 
-		@Override
-		public void run() {
-			for (CallbackContext callbackContext: listener.callbacks) {
-				if(this.callbackContext == callbackContext) {
-					listener.callbacks.remove(callbackContext);
-					break;
-				}
-			}
-			
-			if(listener.size() == 0) {
-				listener.stop();
-			}
-		}    	
+        @Override
+        public void run() {
+            for (CallbackContext callbackContext: listener.callbacks) {
+                if(this.callbackContext == callbackContext) {
+                    listener.callbacks.remove(callbackContext);
+                    break;
+                }
+            }
+            
+            if(listener.size() == 0) {
+                listener.stop();
+            }
+        }       
     }
 }

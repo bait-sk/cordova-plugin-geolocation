@@ -57,12 +57,13 @@ public class GeoBroker extends CordovaPlugin {
     /**
      * Executes the request and returns PluginResult.
      *
-     * @param action 		The action to execute.
-     * @param args 		JSONArry of arguments for the plugin.
-     * @param callbackContext	The callback id used when calling back into JavaScript.
-     * @return 			True if the action was valid, or false if not.
+     * @param action        The action to execute.
+     * @param args      JSONArry of arguments for the plugin.
+     * @param callbackContext   The callback id used when calling back into JavaScript.
+     * @return          True if the action was valid, or false if not.
      */
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+        Log.d("[Cordova GeoBroker]", "execute: " + action);
         if (this.locationManager == null) {
             this.locationManager = (LocationManager) this.cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
             this.networkListener = new NetworkListener(this.locationManager, this);
@@ -91,7 +92,7 @@ public class GeoBroker extends CordovaPlugin {
             }
             else if(action.equals("watchBestPosition")){
                 String id = args.getString(0);
-                this.watchBestPosition(id, callbackContext);
+                this.watchBestPosition(callbackContext);
             }
             else if (action.equals("clearWatch")) {
                 String id = args.getString(0);
@@ -123,8 +124,9 @@ public class GeoBroker extends CordovaPlugin {
     }
 
     private void watchBestPosition(CallbackContext callbackContext) {
-        this.networkListener.startBestWatching(id, callbackContext);
-        this.gpsListener.startBestWatching(id ,callbackContext);
+        Log.d("[Cordova GeoBroker]", "watchBestPosition()");
+        this.networkListener.startBestWatching(callbackContext);
+        this.gpsListener.startBestWatching(callbackContext);
     }
 
     private void getCurrentLocation(CallbackContext callbackContext, boolean enableHighAccuracy, int timeout) {
@@ -186,6 +188,7 @@ public class GeoBroker extends CordovaPlugin {
     }
 
     public void isBestLocation(Location location, CallbackContext callbackContext){
+        Log.d("[Cordova GeoBroker]", "isBestLocation - checking best location");
         Location bestLocation = this.bestLocation;
         if (bestLocation == null) {
             // A new location is always better than no location
@@ -230,8 +233,8 @@ public class GeoBroker extends CordovaPlugin {
     }
 
     public void hasBestLocation(Location location, CallbackContext callbackContext, String log){
-        NetworkListener netList = this.networkListener;
-        GPSListener gpsList = this.gpsListener;
+        final NetworkListener netList = this.networkListener;
+        final GPSListener gpsList = this.gpsListener;
         netList.stopBestWatching();
         gpsList.stopBestWatching();
 
@@ -249,16 +252,16 @@ public class GeoBroker extends CordovaPlugin {
     }
 
     public void win(Location loc, CallbackContext callbackContext, boolean keepCallback) {
-    	PluginResult result = new PluginResult(PluginResult.Status.OK, this.returnLocationJSON(loc));
-    	result.setKeepCallback(keepCallback);
+        PluginResult result = new PluginResult(PluginResult.Status.OK, this.returnLocationJSON(loc));
+        result.setKeepCallback(keepCallback);
         callbackContext.sendPluginResult(result);
     }
 
     /**
      * Location failed.  Send error back to JavaScript.
      * 
-     * @param code			The error code
-     * @param msg			The error message
+     * @param code          The error code
+     * @param msg           The error message
      * @throws JSONException 
      */
     public void fail(int code, String msg, CallbackContext callbackContext, boolean keepCallback) {
@@ -284,11 +287,11 @@ public class GeoBroker extends CordovaPlugin {
 
     public boolean isGlobalListener(CordovaLocationListener listener)
     {
-    	if (gpsListener != null && networkListener != null)
-    	{
-    		return gpsListener.equals(listener) || networkListener.equals(listener);
-    	}
-    	else
-    		return false;
+        if (gpsListener != null && networkListener != null)
+        {
+            return gpsListener.equals(listener) || networkListener.equals(listener);
+        }
+        else
+            return false;
     }
 }
