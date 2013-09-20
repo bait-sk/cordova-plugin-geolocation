@@ -18,6 +18,9 @@
 */
 package org.apache.cordova.core;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.PluginResult;
@@ -29,6 +32,8 @@ import android.content.Context;
 import android.location.Location;
 import android.location.LocationManager;
 
+import android.util.Log;
+
 /*
  * This class is the interface to the Geolocation.  It's bound to the geo object.
  *
@@ -38,7 +43,10 @@ import android.location.LocationManager;
 public class GeoBroker extends CordovaPlugin {
     private GPSListener gpsListener;
     private NetworkListener networkListener;
-    private LocationManager locationManager;    
+    private LocationManager locationManager;  
+
+    private Location bestLocation = new Location("noprovider");
+    private Timer timer = new Timer();
 
     /**
      * Constructor.
@@ -81,6 +89,10 @@ public class GeoBroker extends CordovaPlugin {
                 boolean enableHighAccuracy = args.getBoolean(1);
                 this.addWatch(id, callbackContext, enableHighAccuracy);
             }
+            else if(action.equals("watchBestPosition")){
+                String id = args.getString(0);
+                this.watchBestPosition(id, callbackContext);
+            }
             else if (action.equals("clearWatch")) {
                 String id = args.getString(0);
                 this.clearWatch(id);
@@ -108,6 +120,11 @@ public class GeoBroker extends CordovaPlugin {
     private void clearWatch(String id) {
         this.gpsListener.clearWatch(id);
         this.networkListener.clearWatch(id);
+    }
+
+    private void watchBestPosition(CallbackContext callbackContext) {
+        this.networkListener.startBestWatching(id, callbackContext);
+        this.gpsListener.startBestWatching(id ,callbackContext);
     }
 
     private void getCurrentLocation(CallbackContext callbackContext, boolean enableHighAccuracy, int timeout) {
@@ -166,6 +183,69 @@ public class GeoBroker extends CordovaPlugin {
         }
 
         return o;
+    }
+
+    public void isBestLocation(Location location, CallbackContext callbackContext){
+        Location bestLocation = this.bestLocation;
+        if (bestLocation == null) {
+            // A new location is always better than no location
+            this.hasBestLocation(location, callbackContext, "isBestLocation - no best location");
+            return;
+        }
+
+        // Check whether the new location fix is newer or older
+        long timeDelta = location.getTime() - bestLocation.getTime();
+        boolean isSignificantlyNewer = timeDelta > 60000;
+        boolean isSignificantlyOlder = timeDelta < -60000;
+        boolean isNewer = timeDelta > 0;
+
+        if (isSignificantlyNewer) {
+            this.hasBestLocation(location, callbackContext, "isBestLocation - best location is too old");
+            return;
+        }
+
+        // Check whether the new location fix is more or less accurate
+        int accuracyDelta = (int) (location.getAccuracy() - bestLocation.getAccuracy());
+        boolean isLessAccurate = accuracyDelta > 0;
+        boolean isMoreAccurate = accuracyDelta < 0;
+        boolean isSignificantlyLessAccurate = accuracyDelta > 200;
+
+
+        boolean isFromSameProvider = false;
+        if (location.getProvider() == bestLocation.getProvider()) {
+            isFromSameProvider = true;
+        }
+
+        // Determine location quality using a combination of timeliness and accuracy
+        if (isMoreAccurate) {
+            this.hasBestLocation(location, callbackContext, "isBestLocation - is accurate enough");
+            return;
+        } else if (isNewer && !isLessAccurate) {
+            this.hasBestLocation(location, callbackContext, "isBestLocation - is newer and more or same accurate");
+            return;
+        } else if (isNewer && !isSignificantlyLessAccurate && isFromSameProvider) {
+            this.hasBestLocation(location, callbackContext, "isBestLocation - is newer and not significantly less acurate and from same provider");
+            return;
+        }
+    }
+
+    public void hasBestLocation(Location location, CallbackContext callbackContext, String log){
+        NetworkListener netList = this.networkListener;
+        GPSListener gpsList = this.gpsListener;
+        netList.stopBestWatching();
+        gpsList.stopBestWatching();
+
+        this.bestLocation = location;
+        Log.d("[Cordova GeoBroker]", log);
+        this.win(location, callbackContext, true);
+
+        this.timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                netList.startBestWatching();
+                gpsList.startBestWatching();
+            }
+        }, 60000);
     }
 
     public void win(Location loc, CallbackContext callbackContext, boolean keepCallback) {

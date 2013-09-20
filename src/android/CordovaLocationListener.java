@@ -44,6 +44,7 @@ public class CordovaLocationListener implements LocationListener {
 
     public HashMap<String, CallbackContext> watches = new HashMap<String, CallbackContext>();
     private List<CallbackContext> callbacks = new ArrayList<CallbackContext>();
+    private CallbackContext myCallback;
     
     private Timer timer = null;
 
@@ -91,6 +92,10 @@ public class CordovaLocationListener implements LocationListener {
         while (it.hasNext()) {
             this.owner.win(loc, it.next(), true);
         }
+    }
+
+    private void myWin(Location loc) {
+        this.owner.isBestLocation(location, this.myCallback);
     }
 
     /**
@@ -146,7 +151,7 @@ public class CordovaLocationListener implements LocationListener {
      */
     public void onLocationChanged(Location location) {
         Log.d(TAG, "The location has been updated!");
-        this.win(location);
+        this.myWin(location);
     }
 
     // PUBLIC
@@ -154,7 +159,20 @@ public class CordovaLocationListener implements LocationListener {
     public int size() {
         return this.watches.size() + this.callbacks.size();
     }
-
+    
+    public startBestWatching(CallbackContext callbackContext) {
+        if (this.myCallback == null) {
+            this.myCallback = callbackContext;
+        }
+        this.start();
+    }
+    public startBestWatching() {
+        this.start();
+    }
+    public stopBestWatchin(){
+        this.running = false;
+        this.locationManager.removeUpdates(this);
+    }
     public void addWatch(String timerId, CallbackContext callbackContext) {
         this.watches.put(timerId, callbackContext);
         if (this.size() == 1) {
@@ -207,10 +225,16 @@ public class CordovaLocationListener implements LocationListener {
         if (!this.running) {
             if (this.locationManager.getProvider(LocationManager.NETWORK_PROVIDER) != null) {
                 this.running = true;
-                this.locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 60000, 10, this);
+                this.locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 10, this);
             } else {
                 this.fail(CordovaLocationListener.POSITION_UNAVAILABLE, "Network provider is not available.");
             }
+        }
+    }
+
+    protected void bestStart() {
+        if (!this.running) {
+
         }
     }
 

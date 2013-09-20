@@ -76,6 +76,38 @@ var geolocation = {
    * @param {Function} errorCallback      The function to call when there is an error getting the heading position. (OPTIONAL)
    * @param {PositionOptions} options     The options for getting the position data. (OPTIONAL)
    */
+    watchBestPosition: function(successCallback, errorCallback, options) {
+        var id = utils.createUUID();
+
+        var win = function(p){
+            var pos = new Position(
+                {
+                    latitude:p.latitude,
+                    longitude:p.longitude,
+                    altitude:p.altitude,
+                    accuracy:p.accuracy,
+                    heading:p.heading,
+                    velocity:p.velocity,
+                    altitudeAccuracy:p.altitudeAccuracy
+                },
+                (p.timestamp === undefined ? new Date() : ((p.timestamp instanceof Date) ? p.timestamp : new Date(p.timestamp)))
+            );
+            geolocation.lastPosition = pos;
+            successCallback(pos);
+        }
+
+        var fail = function(e) {
+            var err = new PositionError(e.code, e.message);
+            if (errorCallback) {
+                errorCallback(err);
+            }
+        }
+
+        exec(win, fail, "Geolocation", "watchBestPosition", [id]);
+
+        return id;
+    },
+
     getCurrentPosition:function(successCallback, errorCallback, options) {
         argscheck.checkArgs('fFO', 'geolocation.getCurrentPosition', arguments);
         options = parseParameters(options);
