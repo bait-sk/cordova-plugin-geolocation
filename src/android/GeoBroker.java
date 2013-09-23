@@ -18,9 +18,6 @@
 */
 package org.apache.cordova.core;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.PluginResult;
@@ -31,6 +28,8 @@ import org.json.JSONObject;
 import android.content.Context;
 import android.location.Location;
 import android.location.LocationManager;
+
+import android.os.Handler;
 
 import android.util.Log;
 
@@ -46,7 +45,17 @@ public class GeoBroker extends CordovaPlugin {
     private LocationManager locationManager;  
 
     private Location bestLocation = new Location("noprovider");
-    private Timer timer = new Timer();
+    private Handler handler = new Handler();
+    private boolean appIsActive = true;
+
+    private Runnable callLocationUpdateTask = new Runnable() {
+        public void run() {
+            if (appIsActive){
+                networkListener.startBestWatching();
+                gpsListener.startBestWatching();
+            }
+        }
+    };
 
     /**
      * Constructor.
@@ -91,7 +100,6 @@ public class GeoBroker extends CordovaPlugin {
                 this.addWatch(id, callbackContext, enableHighAccuracy);
             }
             else if(action.equals("watchBestPosition")){
-                String id = args.getString(0);
                 this.watchBestPosition(callbackContext);
             }
             else if (action.equals("clearWatch")) {
@@ -233,22 +241,14 @@ public class GeoBroker extends CordovaPlugin {
     }
 
     public void hasBestLocation(Location location, CallbackContext callbackContext, String log){
-        final NetworkListener netList = this.networkListener;
-        final GPSListener gpsList = this.gpsListener;
-        netList.stopBestWatching();
-        gpsList.stopBestWatching();
+        this.networkListener.stopBestWatching();
+        this.gpsListener.stopBestWatching();
 
         this.bestLocation = location;
         Log.d("[Cordova GeoBroker]", log);
         this.win(location, callbackContext, true);
 
-        this.timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                netList.startBestWatching();
-                gpsList.startBestWatching();
-            }
-        }, 60000);
+        this.handler.postDelayed(callLocationUpdateTask, 15000);
     }
 
     public void win(Location loc, CallbackContext callbackContext, boolean keepCallback) {
@@ -294,4 +294,21 @@ public class GeoBroker extends CordovaPlugin {
         else
             return false;
     }
+
+    @Override
+    public void onPause(boolean multitasking) {
+        Log.d("[Cordova GeoBroker]", "onPause");
+        this.appIsActive = false;
+        this.networkListener.stopBestWatching();
+        this.gpsListener.stopBestWatching();
+    }
+
+    @Override
+    public void onResume(boolean multitasking) {
+        Log.d("[Cordova GeoBroker]", "onResume");
+        this.appIsActive = true;
+        this.networkListener.startBestWatching();
+        this.gpsListener.startBestWatching();
+    }
+
 }

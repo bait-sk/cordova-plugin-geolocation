@@ -227,7 +227,7 @@ public class CordovaLocationListener implements LocationListener {
         if (!this.running) {
             if (this.locationManager.getProvider(LocationManager.NETWORK_PROVIDER) != null) {
                 this.running = true;
-                this.locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+                this.locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 250, 0, this);
             } else {
                 this.fail(CordovaLocationListener.POSITION_UNAVAILABLE, "Network provider is not available.");
             }
