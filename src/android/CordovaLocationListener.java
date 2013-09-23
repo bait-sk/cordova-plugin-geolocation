@@ -234,12 +234,6 @@ public class CordovaLocationListener implements LocationListener {
         }
     }
 
-    protected void bestStart() {
-        if (!this.running) {
-
-        }
-    }
-
     /**
      * Stop receiving location updates.
      */

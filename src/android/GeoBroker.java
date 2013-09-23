@@ -47,6 +47,7 @@ public class GeoBroker extends CordovaPlugin {
     private Location bestLocation = new Location("noprovider");
     private Handler handler = new Handler();
     private boolean appIsActive = true;
+    private boolean bestWatcher = false;
 
     private Runnable callLocationUpdateTask = new Runnable() {
         public void run() {
@@ -100,6 +101,7 @@ public class GeoBroker extends CordovaPlugin {
                 this.addWatch(id, callbackContext, enableHighAccuracy);
             }
             else if(action.equals("watchBestPosition")){
+                this.bestWatcher = true;
                 this.watchBestPosition(callbackContext);
             }
             else if (action.equals("clearWatch")) {
@@ -238,6 +240,8 @@ public class GeoBroker extends CordovaPlugin {
             this.hasBestLocation(location, callbackContext, "isBestLocation - is newer and not significantly less acurate and from same provider");
             return;
         }
+
+        Log.d("[Cordova GeoBroker]", "isBestLocation - new location not good enough");
     }
 
     public void hasBestLocation(Location location, CallbackContext callbackContext, String log){
@@ -299,16 +303,20 @@ public class GeoBroker extends CordovaPlugin {
     public void onPause(boolean multitasking) {
         Log.d("[Cordova GeoBroker]", "onPause");
         this.appIsActive = false;
-        this.networkListener.stopBestWatching();
-        this.gpsListener.stopBestWatching();
+        if (this.bestWatcher) {
+            this.networkListener.stopBestWatching();
+            this.gpsListener.stopBestWatching();
+        }
     }
 
     @Override
     public void onResume(boolean multitasking) {
         Log.d("[Cordova GeoBroker]", "onResume");
         this.appIsActive = true;
-        this.networkListener.startBestWatching();
-        this.gpsListener.startBestWatching();
+        if (this.bestWatcher) {
+            this.networkListener.startBestWatching();
+            this.gpsListener.startBestWatching();
+        }
     }
 
 }
