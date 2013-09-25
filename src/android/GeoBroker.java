@@ -252,7 +252,7 @@ public class GeoBroker extends CordovaPlugin {
         Log.d("[Cordova GeoBroker]", log);
         this.win(location, callbackContext, true);
 
-        this.handler.postDelayed(callLocationUpdateTask, 15000);
+        this.handler.postDelayed(callLocationUpdateTask, 30000);
     }
 
     public void win(Location loc, CallbackContext callbackContext, boolean keepCallback) {

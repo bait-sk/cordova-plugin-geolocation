@@ -42,7 +42,7 @@ public class GPSListener extends CordovaLocationListener {
         if (!this.running) {
             if (this.locationManager.getProvider(LocationManager.GPS_PROVIDER) != null) {
                 this.running = true;
-                this.locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 250, 0, this);
+                this.locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 250, 1, this);
             } else {
                 this.fail(CordovaLocationListener.POSITION_UNAVAILABLE, "GPS provider is not available.");
             }
