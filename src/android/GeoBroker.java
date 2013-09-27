@@ -241,7 +241,7 @@ public class GeoBroker extends CordovaPlugin {
             return;
         }
 
-        Log.d("[Cordova GeoBroker]", "isBestLocation - new location not good enough");
+        this.hasBestLocation(bestLocation, callbackContext, "isBestLocation - new location not good enough");
     }
 
     public void hasBestLocation(Location location, CallbackContext callbackContext, String log){
